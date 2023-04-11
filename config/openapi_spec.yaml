@@ -1,0 +1,559 @@
+openapi: "3.1.0"
+info:
+  title: "Reservations service"
+  version: '1.0'
+  summary: "In this service you can create, update, delete and view reservations."
+  description: "Microservice for handling reservations"
+  contact:
+    email: "jankovic.nemanja@hotmail.com"
+servers:
+  - url: 'http://localhost:8100'
+basePath: "v1"
+schemes:
+- "http"
+- "https"
+tags:
+  - name: "reservation"
+paths:
+  /reservations:
+    get:
+      tags:
+        - "reservation"
+      summary: "Finds all reservations by criteria"
+      description: "Returns multiple reservations."
+      operationId: "findAllReservations"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "Successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/components/schemas/Reservation"
+    post:
+      tags:
+        - "reservation"
+      summary: "Adds new reservation"
+      description: "Create reservation"
+      operationId: "createReservation"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      requestBody:
+        description: "Reservation resource to create"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReservation"
+      responses:
+        '201':
+          description: 'Reservation resource created'
+        '400':
+          description: 'Error creating reservation resource, validation problem'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+  /reservations/{reservation_id}:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/reservation_id'
+      tags:
+        - "reservation"
+      summary: "Finds reservation resource by ID"
+      description: "Find reservation"
+      operationId: "findReservation"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "Resource found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "404":
+          description: "Resource not found"
+        "400":
+          description: "Invalid resource ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+    put:
+      parameters:
+        - $ref: '#/components/parameters/reservation_id'
+      tags:
+        - "reservation"
+      summary: "Update reservation resource"
+      description: "Update reservation"
+      operationId: "updateReservation"
+      consumes:
+        - "application/json"
+      requestBody:
+        description: "Reservation resource"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReservation"
+      responses:
+        "200":
+          description: "Resource updated"
+        "404":
+          description: "Resource not found"
+        "400":
+          description: "Invalid resource ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/reservation_id'
+      tags:
+        - "reservation"
+      summary: "Delete reservation resource"
+      description: "Deletes reservation resource."
+      operationId: "deleteReservation"
+      responses:
+        "200":
+          description: "Successful operation"
+        "404":
+          description: "Resource not found"
+        "400":
+          description: "Invalid resource ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+components:
+  parameters:
+    reservation_id:
+      name: reservation_id
+      in: path
+      schema:
+        type: string
+        format: uuid
+        nullable: false
+      required: true
+      description: Reservation ID
+  schemas:
+    CreateReservation:
+      type: object
+      required:
+        - customer_id
+        - line_items
+        - inventory_items
+        - currency
+        - address
+        - rent_duration
+        - to_be_delivered_at
+        - to_be_picked_up_at
+        - to_be_delivered_by
+        - to_be_picked_up_by
+        - sale_channel_id
+        - note
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          nullable: false
+          example: "1da5d5e2-4faf-11ed-9514-dba3e7aeef87"
+          description: "ID of customer for who reservation is for"
+        line_items:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/LineItem"
+          description: "Array of Line Items for reservation"
+        inventory_items:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/InventoryItem"
+          description: "Array of inventory items to be reserved for reservation"
+        currency:
+          type: string
+          format: currency
+          nullable: false
+          example: "RSD"
+          description: "Currency of price for reservation"
+        address:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/Address"
+          description: "Address to which the reservation should be delivered"
+        rent_duration:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/RentDuration"
+          description: "Rent duration with time unit and amount"
+        to_be_delivered_at:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/ArrivalTime"
+          description: "Exact time or time span for reservation to be delivered"
+        to_be_picked_up_at:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/ArrivalTime"
+          description: "Exact time or time span for reservation to be picked up"
+        to_be_delivered_by:
+          type: string
+          format: uuid
+          nullable: false
+          description: "ID of user who's going to deliver reservation"
+        to_be_picked_up_by:
+          type: string
+          format: uuid
+          nullable: false
+          description: "ID of user who's going to pick up reservation"
+        sale_channel_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: "Sale channel id of which reservation was created"
+        note:
+          type: string
+          description: "Note about reservation"
+          nullable: false
+    UpdateReservation:
+      type: object
+      required:
+        - customer_id
+        - line_items
+        - inventory_items
+        - currency
+        - address
+        - rent_duration
+        - to_be_delivered_at
+        - to_be_picked_up_at
+        - to_be_delivered_by
+        - to_be_picked_up_by
+        - sale_channel_id
+        - reservation_status
+        - note
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          nullable: false
+          example: "1da5d5e2-4faf-11ed-9514-dba3e7aeef87"
+          description: "ID of customer for who reservation is for"
+        line_items:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/LineItem"
+          description: "Array of Line Items for reservation"
+        inventory_items:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/InventoryItem"
+          description: "Array of inventory items to be reserved for reservation"
+        currency:
+          type: string
+          format: currency
+          nullable: false
+          example: "RSD"
+          description: "Currency of price for reservation"
+        address:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/Address"
+          description: "Address to which the reservation should be delivered"
+        rent_duration:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/RentDuration"
+          description: "Rent duration with time unit and amount"
+        to_be_delivered_at:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/ArrivalTime"
+          description: "Exact time or time span for reservation to be delivered"
+        to_be_picked_up_at:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/ArrivalTime"
+          description: "Exact time or time span for reservation to be picked up"
+        to_be_delivered_by:
+          type: string
+          format: uuid
+          nullable: false
+          description: "ID of user who's going to deliver reservation"
+        to_be_picked_up_by:
+          type: string
+          format: uuid
+          nullable: false
+          description: "ID of user who's going to pick up reservation"
+        sale_channel_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: "Sale channel id of which reservation was created"
+        note:
+          type: string
+          description: "Note about reservation"
+          nullable: false
+        reservation_status:
+          type: string
+          nullable: false
+          enum:
+            - delivered
+            - not_delivered
+            - canceled
+    LineItem:
+      type: object
+      required:
+        - line_item_id
+        - product_id
+        - price
+        - quantity
+        - steps
+      properties:
+        line_item_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Line Item ID"
+        product_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Product ID"
+        price:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/Price"
+          description: "Price object containing amount and currency code"
+        steps:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/Step"
+    InventoryItem:
+      type: object
+      required:
+        - product_id
+        - inventory_item_id
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: "Product ID"
+        inventory_item_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: "Inventory Item ID"
+    Address:
+      type: object
+      required:
+        - city
+        - street
+        - street_number
+        - apartment_number
+        - floor_number
+        - note
+      properties:
+        city:
+          type: string
+          nullable: false
+          description: "Address city name"
+        street:
+          type: string
+          nullable: false
+          description: "Address city name"
+        street_number:
+          type: string
+          nullable: false
+          description: "Street number"
+        apartment_number:
+          type: string
+          nullable: true
+          description: "Apartment number"
+        floor_number:
+          type: string
+          nullable: true
+          description: "Floor number"
+        note:
+          type: string
+          nullable: true
+          description: "Note about address for delivery"
+    ArrivalTime:
+      type: object
+      required:
+        - exactly_at
+        - from
+        - to
+      properties:
+        exactly_at:
+          type: string
+          format: date_time
+          nullable: true
+          description: "Exact time and date at which reservation should be delivered"
+        from:
+          type: string
+          format: date_time
+          nullable: true
+          description: "Starting time and date after which reservation should be delivered"
+        to:
+          type: string
+          format: date_time
+          nullable: true
+          description: "Ending time and date before which reservation should be delivered"
+    RentDuration:
+      type: object
+      required:
+        - time_unit
+        - duration
+      properties:
+        time_unit:
+          type: string
+          nullable: false
+          enum:
+            - hour
+            - day
+            - week
+            - month
+            - year
+          description: "Time unit of rent duration"
+        duration:
+          type: string
+          nullable: false
+          description: "Duration of rent"
+    Price:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: string
+          nullable: false
+          description: "Price amount"
+        currency:
+          type: string
+          format: currency
+          nullable: false
+          description: "Price currency"
+    Step:
+      type: object
+      required:
+        - step_id
+        - step_products
+      properties:
+        step_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: "Step ID"
+        step_products:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepProduct"
+          nullable: false
+    StepProduct:
+      type: object
+      required:
+        - product_id
+        - price
+        - quantity
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Product ID"
+        price:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/Price"
+          description: "Price object containing amount and currency code"
+        quantity:
+          type: integer
+          description: "Number of products"
+          nullable: false
+    Reservation:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          nullable: false
+          example: "1da5d5e2-4faf-11ed-9514-dba3e7aeef87"
+          description: "ID of customer for who reservation is for"
+        line_items:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/LineItem"
+          description: "Array of Line Items for reservation"
+        inventory_items:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/InventoryItem"
+          description: "Array of inventory items to be reserved for reservation"
+        currency:
+          type: string
+          format: currency
+          nullable: false
+          example: "RSD"
+          description: "Currency of price for reservation"
+        address:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/Address"
+          description: "Address to which the reservation should be delivered"
+        rent_duration:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/RentDuration"
+          description: "Rent duration with time unit and amount"
+        to_be_delivered_at:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/ArrivalTime"
+          description: "Exact time or time span for reservation to be delivered"
+        to_be_picked_up_at:
+          type: object
+          nullable: false
+          $ref: "#/components/schemas/ArrivalTime"
+          description: "Exact time or time span for reservation to be picked up"
+        to_be_delivered_by:
+          type: string
+          format: uuid
+          nullable: false
+          description: "ID of user who's going to deliver reservation"
+        to_be_picked_up_by:
+          type: string
+          format: uuid
+          nullable: false
+          description: "ID of user who's going to pick up reservation"
+        sale_channel_id:
+          type: string
+          format: uuid
+          nullable: false
+          description: "Sale channel id of which reservation was created"
+        note:
+          type: string
+          description: "Note about reservation"
+          nullable: false
+        reservation_status:
+          type: string
+          nullable: false
+          enum:
+            - delivered
+            - not_delivered
+            - canceled
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
